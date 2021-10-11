@@ -3,9 +3,10 @@ import React, { useEffect, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from './colors';
-import { Fontisto } from '@expo/vector-icons';
+import { Fontisto, FontAwesome5 } from '@expo/vector-icons';
 
 const STORAGE_KEY = '@toDos';
+const CATEGORY_KEY = '@category';
 
 export default function App() {
 	const [ working, setWorking ] = useState(true);
@@ -14,10 +15,12 @@ export default function App() {
 
 	useEffect(() => {
 		loadToDos();
+		getCategory();
 	}, []);
-
-	const travel = () => setWorking(false);
-	const work = () => setWorking(true);
+	const changeCategory = () => {
+		setWorking((prev) => !prev);
+		saveCategory();
+	};
 	const onChangeText = (payload) => setText(payload);
 	const saveToDos = async (toSave) => {
 		await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
@@ -26,13 +29,19 @@ export default function App() {
 		const s = await AsyncStorage.getItem(STORAGE_KEY);
 		setToDos(JSON.parse(s));
 	};
-
+	const saveCategory = async () => {
+		await AsyncStorage.setItem(CATEGORY_KEY, JSON.stringify(working));
+	};
+	const getCategory = async () => {
+		const prevCategory = await AsyncStorage.getItem(CATEGORY_KEY);
+		setWorking(JSON.parse(prevCategory));
+	};
 	const addTodo = async () => {
 		if (text === '') {
 			return;
 		}
 		const newToDos = Object.assign({}, toDos, {
-			[Date.now()]: { text, working }
+			[Date.now()]: { text, working, isComplete: false }
 		});
 		setToDos(newToDos);
 		await saveToDos(newToDos);
@@ -54,14 +63,31 @@ export default function App() {
 			}
 		]);
 	};
+
+	const toggleCompleteToDo = (key) => {
+		let newToDo = { ...toDos };
+		newToDo[key].isComplete = !newToDo[key].isComplete;
+		setToDos(newToDo);
+		saveToDos(newToDo);
+	};
+
+	const editToDo = (key) => {
+		Alert.prompt('Change Text', 'How Do you want Change This Text??', (val) => {
+			let newToDo = { ...toDos };
+			newToDo[key].text = val;
+			setToDos(newToDo);
+			saveToDos(newToDo);
+		});
+	};
+
 	return (
 		<View style={styles.container}>
 			<StatusBar style="auto" />
 			<View style={styles.header}>
-				<TouchableOpacity onPress={work}>
+				<TouchableOpacity onPress={changeCategory}>
 					<Text style={{ ...styles.btnText, color: working ? 'white' : theme.grey }}>Work</Text>
 				</TouchableOpacity>
-				<TouchableOpacity onPress={travel}>
+				<TouchableOpacity onPress={changeCategory}>
 					<Text style={{ ...styles.btnText, color: working ? theme.grey : 'white' }}>Travel</Text>
 				</TouchableOpacity>
 			</View>
@@ -80,10 +106,35 @@ export default function App() {
 						(key) =>
 							toDos[key].working === working ? (
 								<View style={styles.toDo} key={key}>
-									<Text style={styles.toDoText}>{toDos[key].text}</Text>
-									<TouchableOpacity onPress={() => deleteToDo(key)}>
-										<Fontisto name="trash" size={18} color="white" />
-									</TouchableOpacity>
+									<Text
+										style={
+											toDos[key].isComplete ? (
+												{
+													...styles.toDoText,
+													textDecorationLine: 'line-through'
+												}
+											) : (
+												styles.toDoText
+											)
+										}
+									>
+										{toDos[key].text}
+									</Text>
+									<View style={{ justifyContent: 'flex-end', flexDirection: 'row' }}>
+										<TouchableOpacity style={{ marginRight: 15 }} onPress={() => deleteToDo(key)}>
+											<Fontisto name="trash" size={18} color="white" />
+										</TouchableOpacity>
+										<TouchableOpacity style={{ marginRight: 15 }} onPress={() => editToDo(key)}>
+											<FontAwesome5 name="pencil-alt" size={18} color="white" />
+										</TouchableOpacity>
+										<TouchableOpacity onPress={() => toggleCompleteToDo(key)}>
+											<Fontisto
+												name={toDos[key].isComplete ? 'checkbox-active' : 'checkbox-passive'}
+												size={18}
+												color="white"
+											/>
+										</TouchableOpacity>
+									</View>
 								</View>
 							) : null
 					)
