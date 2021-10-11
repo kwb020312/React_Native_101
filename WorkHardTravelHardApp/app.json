@@ -27,6 +27,8 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "description": "노마드 코더(니콜라스) 님의 왕초보를 위한 React Native 101 강좌를 보고 📱 App 만들어보기",
+    "githubUrl": "https://github.com/kwb020312/React_Native_101"
   }
 }

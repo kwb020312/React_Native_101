@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import React, { useEffect, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View, Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { theme } from './colors';
 import { Fontisto, FontAwesome5 } from '@expo/vector-icons';
@@ -27,7 +27,9 @@ export default function App() {
 	};
 	const loadToDos = async () => {
 		const s = await AsyncStorage.getItem(STORAGE_KEY);
-		setToDos(JSON.parse(s));
+		if (s) {
+			setToDos(JSON.parse(s));
+		}
 	};
 	const saveCategory = async () => {
 		await AsyncStorage.setItem(CATEGORY_KEY, JSON.stringify(working));
@@ -49,19 +51,29 @@ export default function App() {
 	};
 
 	const deleteToDo = (key) => {
-		Alert.alert('Delete To Do?', 'Are You sure?', [
-			{ text: 'Cancel', style: 'cancel' },
-			{
-				text: "I'm Sure",
-				style: 'destructive',
-				onPress: () => {
-					const newToDos = { ...toDos };
-					delete newToDos[key];
-					setToDos(newToDos);
-					saveToDos(newToDos);
-				}
+		if (Platform.OS === 'web') {
+			const ok = confirm('Do you want to delete this To Do?');
+			if (ok) {
+				const newToDos = { ...toDos };
+				delete newToDos[key];
+				setToDos(newToDos);
+				saveToDos(newToDos);
 			}
-		]);
+		} else {
+			Alert.alert('Delete To Do?', 'Are You sure?', [
+				{ text: 'Cancel', style: 'cancel' },
+				{
+					text: "I'm Sure",
+					style: 'destructive',
+					onPress: () => {
+						const newToDos = { ...toDos };
+						delete newToDos[key];
+						setToDos(newToDos);
+						saveToDos(newToDos);
+					}
+				}
+			]);
+		}
 	};
 
 	const toggleCompleteToDo = (key) => {
@@ -72,12 +84,20 @@ export default function App() {
 	};
 
 	const editToDo = (key) => {
-		Alert.prompt('Change Text', 'How Do you want Change This Text??', (val) => {
+		if (Platform.OS === 'web') {
+			const val = prompt('How Do you want Change This Text??');
 			let newToDo = { ...toDos };
 			newToDo[key].text = val;
 			setToDos(newToDo);
 			saveToDos(newToDo);
-		});
+		} else {
+			Alert.prompt('Change Text', 'How Do you want Change This Text??', (val) => {
+				let newToDo = { ...toDos };
+				newToDo[key].text = val;
+				setToDos(newToDo);
+				saveToDos(newToDo);
+			});
+		}
 	};
 
 	return (
@@ -85,10 +105,26 @@ export default function App() {
 			<StatusBar style="auto" />
 			<View style={styles.header}>
 				<TouchableOpacity onPress={changeCategory}>
-					<Text style={{ ...styles.btnText, color: working ? 'white' : theme.grey }}>Work</Text>
+					<Text
+						style={{
+							fontSize: 38,
+							fontWeight: '600',
+							color: working ? 'white' : theme.grey
+						}}
+					>
+						Work
+					</Text>
 				</TouchableOpacity>
 				<TouchableOpacity onPress={changeCategory}>
-					<Text style={{ ...styles.btnText, color: working ? theme.grey : 'white' }}>Travel</Text>
+					<Text
+						style={{
+							fontSize: 38,
+							fontWeight: '600',
+							color: working ? theme.grey : 'white'
+						}}
+					>
+						Travel
+					</Text>
 				</TouchableOpacity>
 			</View>
 			<View>
@@ -155,10 +191,7 @@ const styles = StyleSheet.create({
 		flexDirection: 'row',
 		marginTop: 100
 	},
-	btnText: {
-		fontSize: 38,
-		fontWeight: '600'
-	},
+	btnText: {},
 	input: {
 		backgroundColor: 'white',
 		paddingVertical: 15,
