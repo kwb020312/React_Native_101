@@ -41,7 +41,7 @@ export default function App() {
 
 	const deleteToDo = (key) => {
 		Alert.alert('Delete To Do?', 'Are You sure?', [
-			{ text: 'Cancel' },
+			{ text: 'Cancel', style: 'cancel' },
 			{
 				text: "I'm Sure",
 				style: 'destructive',
